@@ -1,19 +1,21 @@
 {
-  "name": "arkanoid3d",
+  "name": "34_webpack_threejs",
   "version": "1.0.0",
-  "description": "Arkanoid with ThreeJs lib",
-  "main": "index.js",
+  "description": "",
+  "main": "app.ts",
   "scripts": {
-    "build": "webpack -p",
-    "watch": "webpack --watch"
+    "start": "webpack-dev-server"
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "@types/three": "^0.84.22",
+    "three": "^0.87.1",
+    "ts-loader": "^2.3.7",
+    "typescript": "^2.6.2"
+  },
   "devDependencies": {
-    "three-js": "^79.0.0",
-    "ts-loader": "^3.2.0",
-    "typescript": "^2.6.2",
-    "typings": "^2.1.1",
-    "webpack": "^3.10.0"
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.10.1"
   }
 }
