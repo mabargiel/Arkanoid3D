@@ -9,8 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/keyboardjs": "^2.2.31",
     "@types/three": "^0.84.22",
-    "keyboard": "0.0.1",
+    "keyboardjs": "^2.4.1",
     "three": "^0.87.1",
     "ts-loader": "^2.3.7",
     "typescript": "^2.6.2"

@@ -1,26 +1,36 @@
 import * as THREE from "three";
+import * as keyboardJS from "keyboardjs";
 import { PlatformMeshGroup, PlatformColors } from "./PlatformMeshGroup";
 import { PaddleMesh } from "./PaddleMesh";
 import { GroundMesh } from "./GroundMesh";
 
 export interface Game {
-    run(): void;
+    update(): void;
+    render(): void;
+}
+
+export class GameState {
+    ballDirY: number;
+    ballDirX: number;
+    fieldHeight: number = 200;
+    fieldWidth: number = 400;
+    paddleDirY: number = 0;
 }
 
 export class StandardGame implements Game {
+    ballMesh: THREE.Mesh;
+    paddleMesh: PaddleMesh;
     renderer: THREE.WebGLRenderer;
     camera: THREE.PerspectiveCamera;
     scene: THREE.Scene;
+    gameState: GameState;
 
     constructor() {
+        this.gameState = new GameState();
         this.setup();
     }
 
-    run(): void {
-        this.gameLoop();
-    }
-
-    setup(): void {
+    private setup(): void {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 10000);
         this.scene.add(this.camera);
@@ -31,32 +41,32 @@ export class StandardGame implements Game {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
-        const planeWidth: number = 400;
-        const planeHeight: number = 200;
+        var planeWidth = this.gameState.fieldWidth;
+        var planeHeight = this.gameState.fieldHeight;
 
         var platformColors = new PlatformColors(new THREE.Color(0x4BD121), new THREE.Color(0x111111));
-        var platform: THREE.Object3D = new PlatformMeshGroup(planeWidth * 0.95, planeHeight, 100, 10, platformColors);
+        var platform: THREE.Object3D = new PlatformMeshGroup(planeWidth, planeHeight, 100, 10, platformColors);
         platform.receiveShadow = true;
 
         this.scene.add(platform);
 
-        var paddleMesh = new PaddleMesh(10, 30, 10, new THREE.Color(0x1B32C0));
-        paddleMesh.position.x = platform.position.x - planeWidth * 0.45 + 4;
-        paddleMesh.position.y = platform.position.y;
-        paddleMesh.position.z = 5;
-        paddleMesh.receiveShadow = true;
-        paddleMesh.castShadow = true;
-        this.scene.add(paddleMesh);
+        this.paddleMesh = new PaddleMesh(10, 30, 10, new THREE.Color(0x1B32C0));
+        this.paddleMesh.position.x = platform.position.x - planeWidth * 0.45 + 4;
+        this.paddleMesh.position.y = platform.position.y;
+        this.paddleMesh.position.z = 5;
+        this.paddleMesh.receiveShadow = true;
+        this.paddleMesh.castShadow = true;
+        this.scene.add(this.paddleMesh);
 
-        var ball = new THREE.Mesh(new THREE.SphereGeometry(5, 6, 6), new THREE.MeshLambertMaterial(
+        this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(5, 6, 6), new THREE.MeshLambertMaterial(
             {
                 color: 0xD43001
             }));
         
-            ball.castShadow = true;
-            ball.receiveShadow = true;
-            ball.position.z = paddleMesh.position.z;
-        this.scene.add(ball);
+            this.ballMesh.castShadow = true;
+            this.ballMesh.receiveShadow = true;
+            this.ballMesh.position.z = this.paddleMesh.position.z;
+        this.scene.add(this.ballMesh);
 
         var groundMesh = new GroundMesh(1000, 1000, 3, new THREE.Color(0x888888))
         groundMesh.position.x = platform.position.x + 25;
@@ -65,28 +75,23 @@ export class StandardGame implements Game {
         groundMesh.receiveShadow = true;
         this.scene.add(groundMesh);
 
-        // // create a point light
         var pointLight =
             new THREE.PointLight(0xF8D898);
 
-        // set its position
         pointLight.position.x = -1000;
         pointLight.position.y = 0;
         pointLight.position.z = 1000;
         pointLight.intensity = 2.0;
         pointLight.distance = 10000;
-        // add to the scene
         this.scene.add(pointLight);
-        
 
-        // add a spot light
-        // this is important for casting shadows
-        var spotLight = new THREE.SpotLight(0xF8D898);
+        var spotLight = 
+            new THREE.SpotLight(0xF8D898);
+
         spotLight.position.set(0, 0, 300);
         spotLight.intensity = 1.5;
         spotLight.castShadow = true;
         this.scene.add(spotLight);
-
 
         this.camera.position.x = platform.position.x - 300;
         this.camera.position.y = (platform.position.y - this.camera.position.y) * 0.05;
@@ -97,20 +102,60 @@ export class StandardGame implements Game {
         this.camera.rotation.z = -90 * Math.PI / 180;
 
         this.renderer.shadowMap.enabled = true;
+
+        this.keyboardPhysics();
     }
 
-    private gameLoop(): void {
-        requestAnimationFrame(() => { this.gameLoop; });
-
-        this.update();
-        this.render();
+    public update(): void {
+        this.paddlePhysics();
+        this.ballPhysics();
     }
 
-    private update(): void {
+    private ballPhysics() {
 
+        if(this.ballMesh.position.y + this.gameState.ballDirY >= this.gameState.fieldHeight * 0.45 || 
+            this.ballMesh.position.y + this.gameState.ballDirY <= -this.gameState.fieldHeight * 0.45) {
+                this.gameState.ballDirY = -this.gameState.ballDirY
+            }
+        else if(this.ballMesh.position.x + this.gameState.ballDirX >= this.gameState.fieldWidth * 0.45 || 
+            this.ballMesh.position.x + this.gameState.ballDirX <= -this.gameState.fieldWidth * 0.45) {
+                this.gameState.ballDirX = -this.gameState.ballDirX;
+            }
+
+        this.ballMesh.position.x += this.gameState.ballDirX;
+        this.ballMesh.position.y += this.gameState.ballDirY;
     }
 
-    private render(): void {
+    private paddlePhysics(): void {
+        if(this.paddleMesh.position.y + this.gameState.paddleDirY <= this.gameState.fieldHeight * 0.45 && 
+            this.paddleMesh.position.y + this.gameState.paddleDirY >= -this.gameState.fieldHeight * 0.45)
+        {
+            this.paddleMesh.position.y += this.gameState.paddleDirY;
+        }
+    }
+
+    private keyboardPhysics(): void {
+        keyboardJS.bind('d', () => {
+            this.gameState.paddleDirY = -3 * 0.5;
+        }, () => {
+            this.gameState.paddleDirY = 0;
+        });
+
+        keyboardJS.bind('a', () => {
+            this.gameState.paddleDirY = 3 * 0.5;
+        }, () => {
+            this.gameState.paddleDirY = 0;
+        });
+
+        keyboardJS.bind('r', () => {
+            this.ballMesh.position.x = 0;
+            this.ballMesh.position.y = 0;
+            this.gameState.ballDirY = 5;
+            this.gameState.ballDirX = -5;
+        }, () => null);
+    }
+
+    public render(): void {
         this.renderer.render(this.scene, this.camera);
     }
 }
