@@ -18,6 +18,7 @@ export class GameState {
 }
 
 export class StandardGame implements Game {
+    paddleMeshPC: PaddleMesh;
     ballMesh: THREE.Mesh;
     paddleMesh: PaddleMesh;
     renderer: THREE.WebGLRenderer;
@@ -57,6 +58,14 @@ export class StandardGame implements Game {
         this.paddleMesh.receiveShadow = true;
         this.paddleMesh.castShadow = true;
         this.scene.add(this.paddleMesh);
+
+        this.paddleMeshPC = new PaddleMesh(10, 30, 10, new THREE.Color(0x1B32C0));
+        this.paddleMeshPC.position.x = platform.position.x + planeWidth * 0.45 + 4;
+        this.paddleMeshPC.position.y = platform.position.y;
+        this.paddleMeshPC.position.z = 5;
+        this.paddleMeshPC.receiveShadow = true;
+        this.paddleMeshPC.castShadow = true;
+        this.scene.add(this.paddleMeshPC);
 
         this.ballMesh = new THREE.Mesh(new THREE.SphereGeometry(5, 6, 6), new THREE.MeshLambertMaterial(
             {
@@ -108,7 +117,22 @@ export class StandardGame implements Game {
 
     public update(): void {
         this.paddlePhysics();
+        this.paddlePhysicsPC();
         this.ballPhysics();
+    }
+
+    private paddlePhysicsPC(): void {
+        if(this.ballMesh.position.y > this.paddleMeshPC.position.y - 15 && this.ballMesh.position.y < this.paddleMeshPC.position.y + 15 && this.ballMesh.position.x > this.paddleMeshPC.position.x - 5) {
+            this.gameState.ballDirX = -this.gameState.ballDirX;
+        }
+
+        if(this.paddleMeshPC.position.y <= this.ballMesh.position.y){
+            this.paddleMeshPC.position.y += 3 * 0.5;
+
+        }
+        else if(this.paddleMeshPC.position.y > this.ballMesh.position.y) {
+            this.paddleMeshPC.position.y += -3 * 0.5;
+        }
     }
 
     private ballPhysics() {
@@ -116,11 +140,14 @@ export class StandardGame implements Game {
         if(this.ballMesh.position.y + this.gameState.ballDirY >= this.gameState.fieldHeight * 0.45 || 
             this.ballMesh.position.y + this.gameState.ballDirY <= -this.gameState.fieldHeight * 0.45) {
                 this.gameState.ballDirY = -this.gameState.ballDirY
-            }
-        else if(this.ballMesh.position.x + this.gameState.ballDirX >= this.gameState.fieldWidth * 0.45 || 
-            this.ballMesh.position.x + this.gameState.ballDirX <= -this.gameState.fieldWidth * 0.45) {
-                this.gameState.ballDirX = -this.gameState.ballDirX;
-            }
+        }
+        else if(this.ballMesh.position.x < -this.gameState.fieldWidth * 0.45 ||
+            this.ballMesh.position.x > this.gameState.fieldWidth * 0.45) {
+                this.gameState.ballDirX = 0;
+                this.gameState.ballDirY = 0;
+                this.ballMesh.position.x = 0;
+                this.ballMesh.position.y = 0;
+        }
 
         this.ballMesh.position.x += this.gameState.ballDirX;
         this.ballMesh.position.y += this.gameState.ballDirY;
@@ -128,9 +155,14 @@ export class StandardGame implements Game {
 
     private paddlePhysics(): void {
         if(this.paddleMesh.position.y + this.gameState.paddleDirY <= this.gameState.fieldHeight * 0.45 && 
-            this.paddleMesh.position.y + this.gameState.paddleDirY >= -this.gameState.fieldHeight * 0.45)
-        {
+            this.paddleMesh.position.y + this.gameState.paddleDirY >= -this.gameState.fieldHeight * 0.45) {
             this.paddleMesh.position.y += this.gameState.paddleDirY;
+        }
+
+        if(this.ballMesh.position.y > this.paddleMesh.position.y - 15 && this.ballMesh.position.y < this.paddleMesh.position.y + 15 && this.ballMesh.position.x < this.paddleMesh.position.x + 5) {
+            this.gameState.ballDirX = -this.gameState.ballDirX;
+
+            this.gameState.ballDirY = (this.paddleMesh.position.y - this.ballMesh.position.y) * -0.3
         }
     }
 
@@ -150,8 +182,8 @@ export class StandardGame implements Game {
         keyboardJS.bind('r', () => {
             this.ballMesh.position.x = 0;
             this.ballMesh.position.y = 0;
-            this.gameState.ballDirY = 5;
-            this.gameState.ballDirX = -5;
+            this.gameState.ballDirY = 1.5;
+            this.gameState.ballDirX = -2;
         }, () => null);
     }
 
