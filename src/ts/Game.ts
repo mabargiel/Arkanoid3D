@@ -127,11 +127,11 @@ export class StandardGame implements Game {
         }
 
         if(this.paddleMeshPC.position.y <= this.ballMesh.position.y){
-            this.paddleMeshPC.position.y += 3 * 0.5;
+            this.paddleMeshPC.position.y += 3 * 0.8;
 
         }
         else if(this.paddleMeshPC.position.y > this.ballMesh.position.y) {
-            this.paddleMeshPC.position.y += -3 * 0.5;
+            this.paddleMeshPC.position.y += -3 * 0.8;
         }
     }
 
