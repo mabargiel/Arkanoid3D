@@ -1,5 +1,5 @@
-# Arkanoid3D
-Arkanoid3D using ThreeJS framework.
+# Ping Pong 3D
+ing Pong 3D using Three.js framework.
 
 ### Getting Started
 
